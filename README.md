@@ -34,7 +34,7 @@
 
 ## 本地启动
 
-建议使用 Node.js 22，与项目部署工作流保持一致。
+建议使用 Node.js 22，与项目持续集成工作流保持一致。
 
 ```bash
 git clone https://github.com/cjgogo27/YourAI.git
@@ -58,17 +58,24 @@ npm run preview
 
 构建结果位于 `dist/`。通过 HTTP 服务访问页面，不要直接双击 HTML 文件运行 ES Modules。
 
-## GitHub Pages 自动部署
+## 验证与 GitHub Pages 发布
 
-仓库包含 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)。推送到 `main` 或在 Actions 中手动运行工作流后，会依次完成：
+网站已发布到 [https://cjgogo27.github.io/YourAI/](https://cjgogo27.github.io/YourAI/)。仓库使用 `main` 保存源码，使用 `gh-pages` 保存构建后的静态页面。
 
-1. 使用 Node.js 22 和 `npm ci` 安装锁定依赖。
-2. 执行 `npm test` 与 `npm run build`。
-3. 上传 `dist/`，通过 GitHub Pages 官方 Actions 发布。
+源码推送到 `main` 后，[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 会自动使用 Node.js 22 安装锁定依赖，执行测试与生产构建，并上传构建产物。该工作流用于验证改动；发布网站使用下面的命令。
 
-首次配置时，在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，并确保仓库允许运行 Actions。工作流声明了部署所需的 `pages: write` 和 `id-token: write` 权限，不需要在源码中保存令牌。
+先确认本机 Git 已登录有权推送本仓库的账号、依赖已安装，再在项目目录执行：
 
-部署成功后，工作流中的 `github-pages` 环境提供实际访问地址；本仓库的预期地址为 [https://cjgogo27.github.io/YourAI/](https://cjgogo27.github.io/YourAI/)。`vite.config.js` 使用相对资源路径，适配 `/YourAI/` 项目子目录。
+```bash
+npm test
+npm run deploy
+```
+
+`npm run deploy` 调用 [`scripts/deploy.mjs`](scripts/deploy.mjs)，先运行 `npm run build`，再将静态产物推送到 `gh-pages`，保留该分支已有提交历史。GitHub 检测到分支更新后，会自动运行 Pages 构建与发布。可以在仓库的 **Actions** 中查看 `pages build and deployment` 的结果。
+
+本仓库已经完成 Pages 配置。若在其他仓库首次启用，进入 **Settings → Pages → Build and deployment**，将 **Source** 设为 **Deploy from a branch**，选择 **gh-pages** 分支和 **/ (root)** 目录。发布使用本机已有的 Git 身份验证，不需要将访问令牌写进源码。
+
+`vite.config.js` 使用相对资源路径，适配 `/YourAI/` 项目子目录。更新发布后，等待 GitHub Pages 工作流成功即可访问新版本。
 
 ## 教学模型的边界
 
@@ -95,8 +102,10 @@ YourAI/
 │   └── style.css              # 响应式视觉样式
 ├── tests/                     # 计算逻辑测试
 ├── public/                    # 静态资源
+├── scripts/
+│   └── deploy.mjs             # 构建并发布至 gh-pages
 ├── .github/workflows/
-│   └── deploy.yml             # GitHub Pages 自动部署
+│   └── ci.yml                 # main 源码的测试、构建与产物上传
 └── vite.config.js             # 构建配置
 ```
 
